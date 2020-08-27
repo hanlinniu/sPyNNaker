@@ -224,6 +224,7 @@ class SynapseDynamicsStructuralCommon(object):
             dynamics.elimination.write_parameters(
                 spec, weight_scales[synapse_info.synapse_type])
 
+    #Copied
     def __get_structural_edges(self, app_graph, app_vertex):
         """
         :param ~pacman.model.graphs.application.ApplicationGraph app_graph:
@@ -418,43 +419,6 @@ class SynapseDynamicsStructuralCommon(object):
         post_to_pre = numpy.core.records.fromarrays(
             numpy.concatenate(padded_rows).T, formats="u1, u1, u2").view("u4")
         spec.write_array(post_to_pre)
-
-    def get_estimated_parameters_sdram_usage_in_bytes(
-            self, application_graph, app_vertex, n_neurons):
-        """ Get SDRAM usage
-
-        :param ~pacman.model.graphs.application.ApplicationGraph \
-                application_graph:
-        :param AbstractPopulationVertex app_vertex:
-        :param int n_neurons:
-        :return: SDRAM usage
-        :rtype: int
-        """
-        # Work out how many sub-edges we will end up with, as this is used
-        # for key_atom_info
-        n_sub_edges = 0
-        structural_edges = self.__get_structural_edges(
-            application_graph, app_vertex)
-        # Also keep track of the parameter sizes
-        param_sizes = self.__partner_selection\
-            .get_parameters_sdram_usage_in_bytes()
-        for (in_edge, synapse_info) in structural_edges:
-            max_atoms = in_edge.pre_vertex.get_max_atoms_per_core()
-            if in_edge.pre_vertex.n_atoms < max_atoms:
-                max_atoms = in_edge.pre_vertex.n_atoms
-            n_sub_edges += int(math.ceil(
-                float(in_edge.pre_vertex.n_atoms) / float(max_atoms)))
-            dynamics = synapse_info.synapse_dynamics
-            param_sizes += dynamics.formation\
-                .get_parameters_sdram_usage_in_bytes()
-            param_sizes += dynamics.elimination\
-                .get_parameters_sdram_usage_in_bytes()
-
-        return int((self._REWIRING_DATA_SIZE +
-                   (self._PRE_POP_INFO_BASE_SIZE * len(structural_edges)) +
-                   (self._KEY_ATOM_INFO_SIZE * n_sub_edges) +
-                   (self._POST_TO_PRE_ENTRY_SIZE * n_neurons * self.__s_max) +
-                   param_sizes))
 
     def synaptic_data_update(
             self, connections, post_vertex_slice, app_edge, synapse_info,

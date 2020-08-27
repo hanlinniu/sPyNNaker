@@ -127,13 +127,6 @@ class SynapseDynamicsStructuralSTDP(
         name += self.__common_sp.get_vertex_executable_suffix()
         return name
 
-    @overrides(AbstractSynapseDynamicsStructural
-               .get_estimated_structural_parameters_sdram_usage_in_bytes)
-    def get_estimated_structural_parameters_sdram_usage_in_bytes(
-            self, application_graph, app_vertex, n_neurons):
-        return self.__common_sp.get_estimated_parameters_sdram_usage_in_bytes(
-            application_graph, app_vertex, n_neurons)
-
     @overrides(SynapseDynamicsSTDP.get_n_words_for_plastic_connections)
     def get_n_words_for_plastic_connections(self, n_connections):
         value = super(SynapseDynamicsStructuralSTDP,

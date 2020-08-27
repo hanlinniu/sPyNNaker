@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 from six import add_metaclass
 from spinn_utilities.abstract_base import (
     AbstractBase, abstractproperty, abstractmethod)
@@ -103,7 +104,27 @@ class AbstractSynapseDynamicsStructural(object):
                    (self._POST_TO_PRE_ENTRY_SIZE * n_neurons * self.s_max) +
                    param_sizes))
 
-    @abstractmethod
+    def __get_structural_edges(self, app_graph, app_vertex):
+        """
+        :param ~pacman.model.graphs.application.ApplicationGraph app_graph:
+        :param ~pacman.model.graphs.application.ApplicationVertex app_vertex:
+        :rtype: list(tuple(ProjectionApplicationEdge, SynapseInformation))
+        """
+        structural_edges = list()
+        for app_edge in app_graph.get_edges_ending_at_vertex(app_vertex):
+            if isinstance(app_edge, ProjectionApplicationEdge):
+                found = False
+                for synapse_info in app_edge.synapse_information:
+                    if isinstance(synapse_info.synapse_dynamics,
+                                  AbstractSynapseDynamicsStructural):
+                        if found:
+                            raise SynapticConfigurationException(
+                                "Only one Projection between each pair of "
+                                "Populations can use structural plasticity")
+                        found = True
+                        structural_edges.append((app_edge, synapse_info))
+        return structural_edges
+
     def get_estimated_structural_parameters_sdram_usage_in_bytes(
             self, application_graph, app_vertex, n_neurons):
         """ Get the size of the structural parameters
@@ -116,6 +137,31 @@ class AbstractSynapseDynamicsStructural(object):
         :return: the size of the parameters, in bytes
         :rtype: int
         """
+        # Work out how many sub-edges we will end up with, as this is used
+        # for key_atom_info
+        n_sub_edges = 0
+        structural_edges = self.__get_structural_edges(
+            application_graph, app_vertex)
+        # Also keep track of the parameter sizes
+        param_sizes = self.partner_selection\
+            .get_parameters_sdram_usage_in_bytes()
+        for (in_edge, synapse_info) in structural_edges:
+            max_atoms = in_edge.pre_vertex.get_max_atoms_per_core()
+            if in_edge.pre_vertex.n_atoms < max_atoms:
+                max_atoms = in_edge.pre_vertex.n_atoms
+            n_sub_edges += int(math.ceil(
+                float(in_edge.pre_vertex.n_atoms) / float(max_atoms)))
+            dynamics = synapse_info.synapse_dynamics
+            param_sizes += dynamics.formation\
+                .get_parameters_sdram_usage_in_bytes()
+            param_sizes += dynamics.elimination\
+                .get_parameters_sdram_usage_in_bytes()
+
+        return int((self._REWIRING_DATA_SIZE +
+                   (self._PRE_POP_INFO_BASE_SIZE * len(structural_edges)) +
+                   (self._KEY_ATOM_INFO_SIZE * n_sub_edges) +
+                   (self._POST_TO_PRE_ENTRY_SIZE * n_neurons * self.s_max) +
+                   param_sizes))
 
     @abstractmethod
     def write_structural_parameters(
