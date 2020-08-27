@@ -437,7 +437,7 @@ class SynapticManager(object):
         if isinstance(self.__synapse_dynamics,
                       AbstractSynapseDynamicsStructural):
             return self.__synapse_dynamics\
-                .get_estimated_structural_parameters_sdram_usage_in_bytes(
+                .get_structural_parameters_sdram_usage_in_bytes(
                      app_graph, app_vertex, vertex_slice.n_atoms)
         else:
             return self.__synapse_dynamics.get_parameters_sdram_usage_in_bytes(
