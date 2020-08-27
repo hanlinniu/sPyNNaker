@@ -419,52 +419,6 @@ class SynapseDynamicsStructuralCommon(object):
             numpy.concatenate(padded_rows).T, formats="u1, u1, u2").view("u4")
         spec.write_array(post_to_pre)
 
-    def get_actual_parameters_sdram_usage_in_bytes(
-            self, machine_graph, machine_vertex):
-        """ Get SDRAM usage
-
-        :param ~pacman.model.graphs.machine.MachineGraph machine_graph:
-        :param _pacman.model.graphs.machine.MachineVertex.py machine_vertex:
-        :return: SDRAM usage
-        :rtype: int
-        """
-        # Keep track of the parameter sizes
-        param_sizes = self.__partner_selection\
-            .get_parameters_sdram_usage_in_bytes()
-        n_neurons = machine_vertex.vertex_slice.n_atoms
-
-        # Work out how many sub-edges we will end up with, as this is used
-        # for key_atom_info
-        n_sub_edges = 0
-        n_infos = 0
-        for machine_edge in machine_graph.get_edges_ending_at_vertex(
-                machine_vertex):
-            found_synapse_info = None
-            if isinstance(machine_edge, ProjectionMachineEdge):
-                for synapse_info in machine_edge.synapse_information:
-                    if isinstance(synapse_info.synapse_dynamics,
-                                  AbstractSynapseDynamicsStructural):
-                        n_sub_edges += 1
-                        if found_synapse_info and \
-                                found_synapse_info != synapse_info:
-                            raise SynapticConfigurationException(
-                                "Only one Projection between each pair of "
-                                "Populations can use structural plasticity")
-                        found_synapse_info = synapse_info
-                if found_synapse_info:
-                    n_infos += 1
-                    dynamics = synapse_info.synapse_dynamics
-                    param_sizes += dynamics.formation\
-                        .get_parameters_sdram_usage_in_bytes()
-                    param_sizes += dynamics.elimination\
-                        .get_parameters_sdram_usage_in_bytes()
-
-        return int((self._REWIRING_DATA_SIZE +
-                   (self._PRE_POP_INFO_BASE_SIZE * n_infos) +
-                   (self._KEY_ATOM_INFO_SIZE * n_sub_edges) +
-                   (self._POST_TO_PRE_ENTRY_SIZE * n_neurons * self.__s_max) +
-                   param_sizes))
-
     def get_estimated_parameters_sdram_usage_in_bytes(
             self, application_graph, app_vertex, n_neurons):
         """ Get SDRAM usage

@@ -124,13 +124,6 @@ class SynapseDynamicsStructuralStatic(
         return name
 
     @overrides(AbstractSynapseDynamicsStructural
-               .get_actual_structural_parameters_sdram_usage_in_bytes)
-    def get_actual_structural_parameters_sdram_usage_in_bytes(
-            self, machine_graph, machine_vertex):
-        return self.__common_sp.get_actual_parameters_sdram_usage_in_bytes(
-            machine_graph, machine_vertex)
-
-    @overrides(AbstractSynapseDynamicsStructural
                .get_estimated_structural_parameters_sdram_usage_in_bytes)
     def get_estimated_structural_parameters_sdram_usage_in_bytes(
             self, application_graph, app_vertex, n_neurons):
